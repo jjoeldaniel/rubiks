@@ -1,79 +1,180 @@
-<div
-  class="flex flex-col items-center justify-center bg-[#1b5299] py-4 rounded-xl"
->
-  <div id="timer-display" class="text-center md:text-6xl font-mono text-white">
-    0.00
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+  <div id="scramble" class="text-lg md:text-xl text-center mb-6 font-mono text-gray-800 dark:text-gray-200 min-h-[3rem] break-words"></div>
+  
+  <div class="flex justify-center mb-8">
+    <div id="timer" class="text-5xl md:text-7xl font-bold text-gray-900 dark:text-white font-mono">0.00</div>
+  </div>
+  
+  <div class="flex flex-col md:flex-row justify-center gap-4 mb-6">
+    <button id="newScrambleBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+      New Scramble
+    </button>
+    <button id="resetTimerBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+      Reset Timer
+    </button>
+  </div>
+
+  <div class="mt-8">
+    <h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">History</h2>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left">
+        <thead>
+          <tr class="border-b border-gray-300 dark:border-gray-700">
+            <th class="pb-2 text-gray-600 dark:text-gray-400">#</th>
+            <th class="pb-2 text-gray-600 dark:text-gray-400">Time</th>
+            <th class="pb-2 text-gray-600 dark:text-gray-400">Scramble</th>
+          </tr>
+        </thead>
+        <tbody id="historyBody">
+          <!-- History items will be added here -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+    <p>Press spacebar or tap timer to start/stop</p>
   </div>
 </div>
 
 <script>
-  // Get the timer display element
-  const timerDisplay = document.getElementById("timer-display");
+  import { randomScrambleForEvent } from "https://cdn.cubing.net/v0/js/cubing/scramble";
 
-  // Variables to manage the timer state
-  let timerRunning = false;
-  let startTime: Number = 0.0;
-  let timerInterval: Number;
-  // New flag to indicate if the timer was just stopped by a keydown event
-  let justStopped = false;
+  // Timer state
+  let isRunning = false;
+  let startTime = 0;
+  let timerInterval: number | undefined;
+  let solves: { time: number; scramble: string }[] = [];
+  let currentScramble = '';
 
-  // Function to update the timer display
-  function updateTimer() {
-    const currentTime = Date.now();
-    const elapsedTime = (currentTime - startTime) / 1000; // Elapsed time in seconds
-    timerDisplay.textContent = elapsedTime.toFixed(2); // Display to two decimal places
+  // DOM elements
+  const timerElement = document.getElementById('timer')!;
+  const scrambleElement = document.getElementById('scramble')!;
+  const historyBody = document.getElementById('historyBody')!;
+  const newScrambleBtn = document.getElementById('newScrambleBtn')!;
+  const resetTimerBtn = document.getElementById('resetTimerBtn')!;
+
+  // Generate a new scramble
+  async function generateScramble() {
+    try {
+      const scramble = await randomScrambleForEvent('333');
+      currentScramble = scramble.toString();
+      scrambleElement.textContent = currentScramble;
+    } catch (error) {
+      console.error('Error generating scramble:', error);
+      scrambleElement.textContent = 'Error generating scramble';
+    }
   }
 
-  window.addEventListener("keydown", (event) => {
-    if (event.code === "Escape") {
-      event.preventDefault();
-      clearInterval(timerInterval);
-      startTime = 0.0;
-      timerDisplay.textContent = startTime.toFixed(2); // Display to two decimal places
-    }
-  });
+  // Format time in seconds to display format
+  function formatTime(timeInMs: number): string {
+    const seconds = timeInMs / 1000;
+    return seconds.toFixed(2);
+  }
 
-  // Event listener for keydown (spacebar press)
-  window.addEventListener("keydown", (event) => {
-    // Check if the pressed key is the spacebar
-    if (event.code === "Space") {
-      // Prevent default spacebar behavior (scrolling)
-      event.preventDefault();
+  // Start the timer
+  function startTimer() {
+    if (isRunning) return;
+    
+    isRunning = true;
+    startTime = Date.now();
+    timerElement.classList.add('text-green-600');
+    
+    timerInterval = setInterval(() => {
+      const currentTime = Date.now();
+      const elapsedTime = currentTime - startTime;
+      timerElement.textContent = formatTime(elapsedTime);
+    }, 10);
+  }
 
-      // If the timer is running, stop it
-      if (timerRunning) {
-        clearInterval(timerInterval); // Clear the interval
-        timerRunning = false; // Set state to stopped
-        justStopped = true; // Set the flag because timer was stopped by keydown
-        // The final time is already displayed by the last updateTimer call
+  // Stop the timer
+  function stopTimer() {
+    if (!isRunning) return;
+    
+    clearInterval(timerInterval);
+    isRunning = false;
+    
+    const endTime = Date.now();
+    const elapsedTime = endTime - startTime;
+    timerElement.textContent = formatTime(elapsedTime);
+    timerElement.classList.remove('text-green-600');
+    
+    // Save the solve
+    solves.push({
+      time: elapsedTime,
+      scramble: currentScramble
+    });
+    
+    updateHistory();
+    // generateScramble();
+  }
+
+  // Reset the timer
+  function resetTimer() {
+    clearInterval(timerInterval);
+    isRunning = false;
+    timerElement.textContent = '0.00';
+    timerElement.classList.remove('text-green-600');
+  }
+
+  // Update the history table
+  function updateHistory() {
+    historyBody.innerHTML = '';
+    
+    solves.forEach((solve, index) => {
+      const row = document.createElement('tr');
+      row.className = 'border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900';
+      
+      const numCell = document.createElement('td');
+      numCell.className = 'py-3 pr-2 text-gray-800 dark:text-gray-200';
+      numCell.textContent = (solves.length - index).toString();
+      
+      const timeCell = document.createElement('td');
+      timeCell.className = 'py-3 pr-2 font-mono text-gray-800 dark:text-gray-200';
+      timeCell.textContent = formatTime(solve.time);
+      
+      const scrambleCell = document.createElement('td');
+      scrambleCell.className = 'py-3 text-sm text-gray-600 dark:text-gray-400 font-mono truncate max-w-[200px]';
+      scrambleCell.title = solve.scramble;
+      scrambleCell.textContent = solve.scramble;
+      
+      row.appendChild(numCell);
+      row.appendChild(timeCell);
+      row.appendChild(scrambleCell);
+      
+      // Add click event to load this scramble
+      row.addEventListener('click', () => {
+        currentScramble = solve.scramble;
+        scrambleElement.textContent = currentScramble;
+      });
+      
+      historyBody.prepend(row);
+    });
+  }
+
+  // Event listeners
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+      e.preventDefault();
+      if (isRunning) {
+        stopTimer();
       } else {
-        timerDisplay.style = "color: yellow";
+        startTimer();
       }
     }
   });
 
-  // Event listener for keyup (spacebar release)
-  window.addEventListener("keyup", (event) => {
-    // Check if the released key is the spacebar
-    if (event.code === "Space") {
-      // Prevent default spacebar behavior (scrolling)
-      event.preventDefault();
-
-      // If the timer was just stopped by keydown, reset the flag and do nothing else
-      if (justStopped) {
-        justStopped = false;
-        return; // Exit the function
-      }
-
-      // If the timer is not running, start it
-      if (!timerRunning) {
-        timerDisplay.style = "color: white";
-        startTime = Date.now(); // Record the start time
-        timerRunning = true; // Set state to running
-
-        // Start the interval to update the timer every 10 milliseconds (100th of a second)
-        timerInterval = setInterval(updateTimer, 10);
-      }
+  timerElement.addEventListener('click', () => {
+    if (isRunning) {
+      stopTimer();
+    } else {
+      startTimer();
     }
   });
+
+  newScrambleBtn.addEventListener('click', generateScramble);
+  resetTimerBtn.addEventListener('click', resetTimer);
+
+  // Initialize
+  generateScramble();
 </script>
