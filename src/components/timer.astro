@@ -1,0 +1,79 @@
+<div
+  class="flex flex-col items-center justify-center bg-[#1b5299] py-4 rounded-xl"
+>
+  <div id="timer-display" class="text-center md:text-6xl font-mono text-white">
+    0.00
+  </div>
+</div>
+
+<script>
+  // Get the timer display element
+  const timerDisplay = document.getElementById("timer-display");
+
+  // Variables to manage the timer state
+  let timerRunning = false;
+  let startTime: Number = 0.0;
+  let timerInterval: Number;
+  // New flag to indicate if the timer was just stopped by a keydown event
+  let justStopped = false;
+
+  // Function to update the timer display
+  function updateTimer() {
+    const currentTime = Date.now();
+    const elapsedTime = (currentTime - startTime) / 1000; // Elapsed time in seconds
+    timerDisplay.textContent = elapsedTime.toFixed(2); // Display to two decimal places
+  }
+
+  window.addEventListener("keydown", (event) => {
+    if (event.code === "Escape") {
+      event.preventDefault();
+      clearInterval(timerInterval);
+      startTime = 0.0;
+      timerDisplay.textContent = startTime.toFixed(2); // Display to two decimal places
+    }
+  });
+
+  // Event listener for keydown (spacebar press)
+  window.addEventListener("keydown", (event) => {
+    // Check if the pressed key is the spacebar
+    if (event.code === "Space") {
+      // Prevent default spacebar behavior (scrolling)
+      event.preventDefault();
+
+      // If the timer is running, stop it
+      if (timerRunning) {
+        clearInterval(timerInterval); // Clear the interval
+        timerRunning = false; // Set state to stopped
+        justStopped = true; // Set the flag because timer was stopped by keydown
+        // The final time is already displayed by the last updateTimer call
+      } else {
+        timerDisplay.style = "color: yellow";
+      }
+    }
+  });
+
+  // Event listener for keyup (spacebar release)
+  window.addEventListener("keyup", (event) => {
+    // Check if the released key is the spacebar
+    if (event.code === "Space") {
+      // Prevent default spacebar behavior (scrolling)
+      event.preventDefault();
+
+      // If the timer was just stopped by keydown, reset the flag and do nothing else
+      if (justStopped) {
+        justStopped = false;
+        return; // Exit the function
+      }
+
+      // If the timer is not running, start it
+      if (!timerRunning) {
+        timerDisplay.style = "color: white";
+        startTime = Date.now(); // Record the start time
+        timerRunning = true; // Set state to running
+
+        // Start the interval to update the timer every 10 milliseconds (100th of a second)
+        timerInterval = setInterval(updateTimer, 10);
+      }
+    }
+  });
+</script>

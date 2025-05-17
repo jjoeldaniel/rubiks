@@ -1,16 +1,20 @@
 ---
-
+import Layout from "../layouts/Layout.astro";
+import Timer from "../components/timer.astro";
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Layout>
+  <h1 class="text-center text-4xl md:text-3xl font-bold text-[#1B5299]">Rubik's Cube Timer</h1>
+  <span
+    class="mt-4 text-gray-800 font-semibold bg-[#fff94f] text-lg border-3 hover:scale-125 transition rounded-3xl p-2 px-3"
+    id="scramble"></span>
+  <div class="mt-40">
+    <Timer />
+  </div>
+
+  <script>
+    import { randomScrambleForEvent } from "cubing/scramble";
+    const scramble = await randomScrambleForEvent("333");
+    document.getElementById("scramble").innerText = scramble;
+  </script>
+</Layout>
