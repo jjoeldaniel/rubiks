@@ -9,8 +9,8 @@
     <button id="newScrambleBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition-colors">
       New Scramble
     </button>
-    <button id="resetTimerBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition-colors">
-      Reset Timer
+    <button id="resetHistoryBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+      Reset History
     </button>
   </div>
 
@@ -52,7 +52,7 @@
   const scrambleElement = document.getElementById('scramble')!;
   const historyBody = document.getElementById('historyBody')!;
   const newScrambleBtn = document.getElementById('newScrambleBtn')!;
-  const resetTimerBtn = document.getElementById('resetTimerBtn')!;
+  const resetHistoryBtn = document.getElementById('resetHistoryBtn')!;
 
   // Generate a new scramble
   async function generateScramble() {
@@ -70,6 +70,11 @@
   function formatTime(timeInMs: number): string {
     const seconds = timeInMs / 1000;
     return seconds.toFixed(2);
+  }
+
+  function resetHistory() {
+    historyBody.innerHTML = '';
+    solves = [];
   }
 
   // Start the timer
@@ -106,6 +111,7 @@
     });
     
     updateHistory();
+    resetTimer();
     // generateScramble();
   }
 
@@ -173,7 +179,7 @@
   });
 
   newScrambleBtn.addEventListener('click', generateScramble);
-  resetTimerBtn.addEventListener('click', resetTimer);
+  resetHistoryBtn.addEventListener('click', resetHistory);
 
   // Initialize
   generateScramble();
